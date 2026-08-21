@@ -2,20 +2,13 @@
 import PageLayout from '@/layouts/CommonPage.astro'
 import GitHubContributions from '@/components/projects/GitHubContributions.astro'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
+import { openSourceProjects } from '@/data/projects'
 
 const headings = [
   { depth: 2, slug: 'open-source', text: 'Open Source' },
   { depth: 2, slug: 'programs', text: 'Programs' },
   { depth: 2, slug: 'learnings', text: 'Learnings' },
   { depth: 2, slug: 'theme', text: 'Theme' }
-]
-
-const openSource = [
-  {
-    name: 'token-monitor',
-    description: '为 AI 工具打造的即时 Token、成本与限额监控桌面组件，支持多设备同步。',
-    links: [{ type: 'github', href: 'https://github.com/Javis603/token-monitor' }]
-  }
 ]
 
 const programs = [
@@ -57,7 +50,7 @@ const theme = [
   <GitHubContributions username='CxHsin' displayName='CxHsin' />
 
   <h2 id='open-source'>Open Source</h2>
-  <ProjectSection project={openSource} />
+  <ProjectSection project={openSourceProjects} />
 
   <h2 id='programs'>Programs</h2>
   <ProjectSection project={programs} />

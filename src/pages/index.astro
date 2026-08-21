@@ -1,15 +1,18 @@
 ---
 import { Image } from 'astro:assets'
-import { getSafeArchiveCollection } from '@/lib/content-guards'
+import { getSafeArchiveCollection, getSafeBlogCollection } from '@/lib/content-guards'
 import avatar from 'src/assets/avatar.jpg'
 
+import { PostPreview } from 'astro-pure/components/pages'
 import { Quote } from 'astro-pure/advanced'
-import { Button, Card, Icon, Label } from 'astro-pure/user'
+import { Button, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import Section from '@/components/home/Section.astro'
 import SkillLayout from '@/components/home/SkillLayout.astro'
 import LoadingOverlay from '@/components/showcase/LoadingOverlay.astro'
+import ProjectSection from '@/components/projects/ProjectSection.astro'
 import Terminal from '@/components/terminal/Terminal.astro'
+import { openSourceProjects } from '@/data/projects'
 import config from '@/site-config'
 
 export const prerender = true
@@ -42,6 +45,11 @@ const latestNotes = (await getSafeArchiveCollection())
   .filter((entry) => !entry.data.draft)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
   .slice(0, 4)
+
+const latestPosts = (await getSafeBlogCollection())
+  .filter((entry) => !entry.data.draft)
+  .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
+  .slice(0, 1)
 ---
 
 <PageLayout meta={{ title: 'Home' }} highlightColor='#659EB9'>
@@ -110,12 +118,13 @@ const latestNotes = (await getSafeArchiveCollection())
       </Section>
 
       <Section title='Blog'>
-        <Card
-          heading='Blank template'
-          subheading='The original personal blog content has been removed.'
-        >
-          <p class='text-muted-foreground'>You can add your own posts here later.</p>
-        </Card>
+        {latestPosts.length > 0 ? (
+          <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
+            {latestPosts.map((post) => <PostPreview post={post} />)}
+          </ul>
+        ) : (
+          <p class='text-muted-foreground'>No posts yet.</p>
+        )}
         <Button title='Open page' class='w-fit self-end text-sm' href='/blog' style='ahead' />
       </Section>
 
@@ -141,13 +150,8 @@ const latestNotes = (await getSafeArchiveCollection())
         <Button title='Open page' class='w-fit self-end text-sm' href='/archive' style='ahead' />
       </Section>
 
-      <Section title='Projects'>
-        <Card
-          heading='Blank template'
-          subheading='The original personal project content has been removed.'
-        >
-          <p class='text-muted-foreground'>You can add your own selected projects here later.</p>
-        </Card>
+      <Section title='Open Source'>
+        <ProjectSection project={openSourceProjects} />
         <Button title='Open page' class='w-fit self-end text-sm' href='/projects' style='ahead' />
       </Section>
 
