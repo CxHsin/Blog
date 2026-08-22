@@ -17,7 +17,9 @@ const menuKeyMap: Record<string, Parameters<typeof t>[0]> = {
   '/contact': 'nav.contact'
 }
 
-const menu = (config.header?.menu ?? []).map((item) => {
+type MenuItem = { title: string; link: string }
+
+const menu = (config.header?.menu ?? []).map((item: MenuItem) => {
   const key = menuKeyMap[item.link]
   return {
     title: key ? t(key) : item.title,
@@ -98,7 +100,7 @@ const currentPath = Astro.url.pathname
     >
       <div class='flex flex-col items-center justify-center overflow-hidden sm:flex-row'>
         {
-          menu.map((item) => (
+          menu.map((item: MenuItem) => (
             <a
               href={item.link}
               class='header-link w-full flex-none grow py-2 text-right font-medium transition-none sm:w-fit sm:px-3'

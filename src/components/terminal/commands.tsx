@@ -696,16 +696,6 @@ export function commandNotFoundLines(name: string): OutputLine[] {
   return lines
 }
 
-function commandPathHint(input: string): OutputLine | null {
-  const resolved = resolveCommand(input)
-  if (!resolved.spec || !resolved.canonical) return null
-  return {
-    kind: 'text',
-    tone: 'muted',
-    text: `tip: \`${input}\` is a command. try \`${resolved.canonical}\` instead of using it as a path.`
-  }
-}
-
 /**
  * Path completion helper. Splits the partial token into a base directory
  * and a leaf prefix, walks the FS to that base, and returns full token

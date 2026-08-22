@@ -1,4 +1,4 @@
 declare module 'virtual:config' {
-  const Config: import('astro-pure/types').ConfigOutput
+  const Config: typeof import('./site.config').default
   export default Config
 }

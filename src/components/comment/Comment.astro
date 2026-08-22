@@ -43,7 +43,7 @@ const { class: className, path } = Astro.props as Props
       ).__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false
 
       const emoji = walineConfig.emoji?.map(
-        (preset) => `${config.npmCDN}/@waline/emojis@1.2.0/${preset}` as WalineEmojiPresets
+        (preset: string) => `${config.npmCDN}/@waline/emojis@1.2.0/${preset}` as WalineEmojiPresets
       )
 
       const overridePath = this.dataset.path
