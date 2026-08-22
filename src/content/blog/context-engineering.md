@@ -140,3 +140,9 @@ LangChain 的博客提出了四类上下文管理法：
 内存不够就压缩，内存太乱就选择，内存放不下就写进外部存储，多个进程抢内存就隔离——哦对，还要小心别往内存里倒垃圾（那是污染）。
 
 所谓，Context Engineering 本质就是让模型在正确的时间，以正确的形式，获得完成当前步骤所必需的信息。
+
+## 延伸阅读/参考文献
+
+1. **LangChain** — [Context Engineering](https://www.langchain.com/blog/context-engineering-for-agents) — 面向 Agent 的上下文工程实践，系统总结写入、选择、压缩与隔离四类上下文管理方法
+2. **Anthropic** — [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — 从 Prompt Engineering 走向 Context Engineering，介绍上下文检索、压缩与长程任务管理
+3. **千问AI平台** — [浅谈上下文工程｜从 Claude Code、Manus 和 Kiro 看提示工程到上下文工程的转变](https://mp.weixin.qq.com/s/KbviOJ6q-K4ik_wzsUs2dw?open_in_browser=true) — 结合 Claude Code、Manus 与 Kiro 的实践，梳理上下文工程的组成、价值与演进方向
