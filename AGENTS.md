@@ -89,8 +89,12 @@ structure for trivial commits.
 
 ## Pull Requests
 
-Do not create a new branch solely for submitting a pull request. Use the
-current branch unless the user explicitly asks for a different branch.
+Commit changes directly to `main` for this blog repository. Use a different
+branch only when the user explicitly asks for one.
+
+Do not use AI agent names as branch-name prefixes, such as `codex/`,
+`claude/`, or `gemini/`. When a prefix is useful, use one that describes the
+change, such as `feat/`, `fix/`, `docs/`, or `chore/`.
 
 PR titles should follow the same Conventional Commit format as commit messages
 above because they become the squash-merge commit subject. Write the title
