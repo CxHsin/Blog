@@ -6,6 +6,7 @@ export function mountAvatarTransition() {
   let recovery = 0
   let overlay: HTMLElement | undefined
   let avatar: HTMLElement | undefined
+  let weave: HTMLElement | undefined
   const animations: Animation[] = []
   const reset = () => {
     clearTimeout(navigation)
@@ -13,6 +14,7 @@ export function mountAvatarTransition() {
     animations.splice(0).forEach((animation) => animation.cancel())
     overlay?.remove()
     avatar?.remove()
+    weave?.remove()
     leaving = false
   }
   window.addEventListener('pagehide', reset)
@@ -76,7 +78,41 @@ export function mountAvatarTransition() {
           )
         )
       }
+      if (!reduced) {
+        weave = document.createElement('div')
+        weave.className = 'nailong-departure-weave'
+        weave.setAttribute('aria-hidden', 'true')
+        for (let i = 0; i < 6; i++) weave.appendChild(document.createElement('span'))
+        document.body.appendChild(weave)
+        const width = Math.min(innerWidth * 0.32, 240)
+        animations.push(
+          weave.animate(
+            [
+              { left: `${x}px`, top: `${y}px`, width: '12px', gap: '2px', opacity: 0 },
+              {
+                left: `${innerWidth / 2}px`,
+                top: `${innerHeight / 2}px`,
+                width: `${width}px`,
+                gap: '10px',
+                opacity: 0.3
+              }
+            ],
+            { duration, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' }
+          )
+        )
+      }
       navigation = window.setTimeout(() => {
+        try {
+          sessionStorage.setItem(
+            'nailong-entry-handoff',
+            JSON.stringify({
+              width: reduced ? 48 : Math.min(innerWidth * 0.32, 240),
+              time: Date.now()
+            })
+          )
+        } catch {
+          /* Continue normally when storage is unavailable. */
+        }
         window.location.assign(link.href)
       }, duration)
       // Restore the homepage if navigation fails instead of leaving a permanent cover.

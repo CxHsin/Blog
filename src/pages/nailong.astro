@@ -217,9 +217,9 @@ export const prerender = true
       }
       @keyframes weave-grow {
         from {
-          width: 12px;
-          gap: 2px;
-          opacity: 0;
+          width: var(--weave-start-width, 12px);
+          gap: var(--weave-start-gap, 2px);
+          opacity: var(--weave-start-opacity, 0);
         }
         to {
           width: min(32vw, 240px);

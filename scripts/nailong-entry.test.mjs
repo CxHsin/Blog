@@ -266,6 +266,7 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
     const nodes = []
     class Element extends EventTarget {
       style = {}
+      appendChild() {}
       target = ''
       href = '/nailong'
       hasAttribute() {
@@ -308,9 +309,11 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
       createElement: () => new Element(),
       body: { appendChild: (el) => nodes.push(el) }
     }
+    const storage = new Map()
     vm.runInNewContext(code + '\nmountAvatarTransition()', {
       document,
       window,
+      sessionStorage: { setItem: (key, value) => storage.set(key, value) },
       innerWidth: 1440,
       innerHeight: 900,
       clearTimeout: (key) => timers.delete(key)
@@ -322,6 +325,7 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
       timers,
       animations,
       navigations,
+      storage,
       click(properties = {}) {
         const event = new Event('click', { cancelable: true })
         Object.assign(event, { button: 0, ...properties })
@@ -354,9 +358,12 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
   const entry = setup()
   assert.equal(entry.click().defaultPrevented, true)
   entry.click()
-  assert.equal(entry.nodes.length, 1)
+  assert.equal(entry.nodes.length, 2)
   assert.equal(entry.animations[0].options.duration, 220)
+  assert.equal(entry.animations[1].frames[0].left, '256px')
+  assert.equal(entry.animations[1].frames[1].left, '720px')
   entry.fire(220)
+  assert.equal(JSON.parse(entry.storage.get('nailong-entry-handoff')).width, 240)
   assert.deepEqual(entry.navigations, ['/nailong'])
   entry.window.dispatchEvent(new Event('pagehide'))
   entry.window.dispatchEvent(new Event('pageshow'))
@@ -364,7 +371,7 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
   assert.equal(entry.timers.size, 0)
   assert.ok(entry.animations.every((a) => a.cancelled))
   entry.click()
-  assert.equal(entry.nodes.length, 1)
+  assert.equal(entry.nodes.length, 2)
   const reduced = setup(true)
   reduced.click()
   assert.equal(reduced.animations[0].options.duration, 120)
