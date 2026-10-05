@@ -90,7 +90,8 @@ structure for trivial commits.
 ## Pull Requests
 
 Develop and commit changes on `development` for this blog repository. After
-verification, merge `development` into `main` to publish the completed changes.
+verification, report the completed changes and verification results to the user,
+then follow the approval requirement in Merge Guidance before merging into `main`.
 Use a different development branch only when the user explicitly asks for one.
 
 Do not use AI agent names as branch-name prefixes, such as `codex/`,
@@ -139,6 +140,12 @@ Before submitting to GitHub, confirm that:
 - related docs or config changes are updated together
 
 ## Merge Guidance
+
+Merge only after the user explicitly confirms that the completed changes may be
+merged. This requirement applies to both local Git merges into `main` and GitHub
+PR merges. Requests to implement, fix, or verify changes do not authorize a merge.
+Until confirmation is received, keep the completed changes on `development` and
+report them for review.
 
 Prefer squash merge unless there is a clear reason to preserve individual
 commits. The final squash commit title must still follow the format in this
