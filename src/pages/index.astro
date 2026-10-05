@@ -66,12 +66,18 @@ const latestPosts = (await getSafeBlogCollection())
       class='animate relative z-50 mb-12 flex flex-col items-center gap-y-6'
       id='content-header'
     >
-      <Image
-        src={avatar}
-        alt='profile'
-        class='h-28 w-auto rounded-full border p-1'
-        loading='eager'
-      />
+      <a
+        href='/nailong'
+        aria-label='打开奶龙彩蛋'
+        class='rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4'
+      >
+        <Image
+          src={avatar}
+          alt='profile'
+          class='h-28 w-auto rounded-full border p-1'
+          loading='eager'
+        />
+      </a>
 
       <div class='flex flex-col items-center gap-y-4'>
         <h1 class='text-3xl font-bold'>{config.author}</h1>
