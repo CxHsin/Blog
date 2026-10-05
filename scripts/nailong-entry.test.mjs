@@ -9,7 +9,148 @@ const source = await Bun.file(new URL('../src/components/nailong/reel.ts', impor
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(
   source.replace(/^import .*\n/gm, '').replace('export function mountReel', 'function mountReel')
 )
-function harness(width = 1440, height = 900, weaveWidth) {
+
+test('avatar overlay preserves ordinary links, authenticates messages and cleans up on back', async () => {
+  const source = await Bun.file(
+    new URL('../src/components/nailong/transition.ts', import.meta.url)
+  ).text()
+  const script = new Bun.Transpiler({ loader: 'ts' }).transformSync(
+    source.replace('export function', 'function')
+  )
+  const timers = new Map(),
+    messages = [],
+    animations = []
+  let id = 0,
+    pushes = 0,
+    backs = 0
+  class Element extends EventTarget {
+    children = []
+    dataset = {}
+    style = {}
+    inert = false
+    contentWindow = { postMessage: (data) => messages.push(data), focus() {} }
+    append(...children) {
+      this.children.push(...children)
+    }
+    appendChild(child) {
+      this.append(child)
+    }
+    setAttribute() {}
+    hasAttribute() {
+      return false
+    }
+    focus() {
+      document.activeElement = this
+    }
+    getBoundingClientRect() {
+      return { width: 80 }
+    }
+    querySelectorAll() {
+      return this.children
+    }
+    animate() {
+      const animation = {
+        cancel() {
+          this.cancelled = true
+        }
+      }
+      animations.push(animation)
+      return animation
+    }
+    remove() {
+      document.body.children = document.body.children.filter((child) => child !== this)
+    }
+  }
+  const link = new Element(),
+    background = new Element()
+  const document = {
+    title: 'Home',
+    body: new Element(),
+    activeElement: null,
+    documentElement: { style: { overflow: '' }, classList: { contains: () => false } },
+    querySelector: () => link,
+    createElement: () => new Element()
+  }
+  document.body.append(background)
+  const window = new EventTarget()
+  const history = {
+    state: null,
+    pushState(state) {
+      this.state = state
+      pushes++
+    },
+    back() {
+      backs++
+    }
+  }
+  const setTimeout = (callback, duration) => {
+    timers.set(++id, { callback, duration })
+    return id
+  }
+  window.setTimeout = setTimeout
+  vm.runInNewContext(script + '\nmountAvatarTransition()', {
+    document,
+    window,
+    history,
+    location: { origin: 'http://localhost' },
+    HTMLElement: Element,
+    AbortController,
+    setTimeout,
+    clearTimeout: (key) => timers.delete(key),
+    innerWidth: 1440,
+    matchMedia: () => ({ matches: false }),
+    getComputedStyle: () => ({ gap: '6px', opacity: '.3', transform: 'none' })
+  })
+  const click = (ctrlKey = false) => {
+    const event = new Event('click', { cancelable: true })
+    Object.assign(event, { button: 0, ctrlKey })
+    link.dispatchEvent(event)
+    return event
+  }
+  assert.equal(click(true).defaultPrevented, false)
+  click()
+  click()
+  assert.equal(pushes, 1)
+  assert.equal(background.inert, true)
+  const shell = document.body.children[1],
+    [iframe, cover, back] = shell.children
+  const send = (type, origin = 'http://localhost', source = iframe.contentWindow) => {
+    const event = new Event('message')
+    Object.assign(event, { origin, source, data: { type } })
+    window.dispatchEvent(event)
+  }
+  send('nailong:prepared', 'http://other')
+  send('nailong:prepared', 'http://localhost', {})
+  assert.equal(messages.length, 0)
+  send('nailong:prepared')
+  assert.equal(messages[0].width, 80)
+  send('nailong:reveal')
+  send('nailong:reveal')
+  assert.equal(animations.length, 2)
+  for (const timer of [...timers.values()]) if (timer.duration === 650) timer.callback()
+  assert.equal(cover.hidden, true)
+  back.dispatchEvent(new Event('click'))
+  assert.equal(backs, 1)
+  history.state = null
+  window.dispatchEvent(new Event('popstate'))
+  assert.equal(document.body.children.length, 1)
+  assert.equal(background.inert, false)
+  assert.equal(document.documentElement.style.overflow, '')
+  assert.equal(document.activeElement, link)
+  assert.equal(document.title, 'Home')
+  assert.equal(timers.size, 0)
+  assert.ok(animations.every((animation) => animation.cancelled))
+  history.state = { nailongOverlay: true }
+  window.dispatchEvent(new Event('popstate'))
+  assert.equal(document.body.children.length, 2)
+  for (const timer of [...timers.values()]) if (timer.duration === 15000) timer.callback()
+  assert.equal(document.body.children[1].children[1].hidden, true)
+  assert.ok(document.body.children[1].children[0].src.includes('fallback=1'))
+  window.dispatchEvent(new Event('pagehide'))
+  assert.equal(document.body.children.length, 1)
+})
+
+function harness(width = 1440, height = 900, weaveWidth, embedded = false) {
   let now = 0,
     next = 0,
     renders = 0,
@@ -61,10 +202,13 @@ function harness(width = 1440, height = 900, weaveWidth) {
   document.hidden = false
   document.documentElement = {
     dataset: { nailongEntry: 'loading' },
+    hasAttribute: () => embedded,
     classList: { contains: () => false, toggle() {} }
   }
   document.createElement = () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) })
   const window = new EventTarget()
+  const messages = []
+  window.parent = { postMessage: (data) => messages.push(data) }
   window.devicePixelRatio = 1
   window.matchMedia = () => ({ matches: false })
   class Renderer {
@@ -91,7 +235,7 @@ function harness(width = 1440, height = 900, weaveWidth) {
     }
   }
   class Loader {
-    load(src, ok, progress, fail) {
+    load(src, ok, _progress, fail) {
       loads.push({ src, ok, fail })
     }
   }
@@ -104,6 +248,8 @@ function harness(width = 1440, height = 900, weaveWidth) {
     fragmentShader: '',
     document,
     window,
+    location: { origin: 'http://localhost', search: '' },
+    URLSearchParams,
     HTMLElement: Element,
     AbortController,
     MutationObserver: class {
@@ -121,6 +267,7 @@ function harness(width = 1440, height = 900, weaveWidth) {
   vm.runInContext(code + '\nmountReel()', context)
   return {
     stage,
+    messages,
     properties,
     line,
     get startScale() {
@@ -146,6 +293,35 @@ function harness(width = 1440, height = 900, weaveWidth) {
     }
   }
 }
+test('embedded reel waits for an authenticated start and preserves the parent line scale', () => {
+  const h = harness(1440, 900, undefined, true)
+  h.complete()
+  h.tick()
+  h.tick()
+  assert.equal(h.renders, 0)
+  assert.deepEqual(
+    h.messages.map((message) => message.type),
+    ['nailong:prepared']
+  )
+  const send = (origin, source, width) => {
+    const event = new Event('message')
+    Object.assign(event, { origin, source, data: { type: 'nailong:start', width } })
+    h.window.dispatchEvent(event)
+    h.tick()
+  }
+  send('http://other', h.window.parent, 80)
+  send('http://localhost', {}, 80)
+  send('http://localhost', h.window.parent, NaN)
+  assert.equal(h.renders, 0)
+  send('http://localhost', h.window.parent, 80)
+  assert.ok(h.renders > 0)
+  assert.equal(h.startScale, 80 / 1440)
+  send('http://localhost', h.window.parent, 12)
+  assert.equal(h.startScale, 80 / 1440)
+  h.window.dispatchEvent(new Event('pagehide'))
+  assert.equal(h.disposed, true)
+})
+
 test('startup waits for textures and entrance before allowing reel input', () => {
   for (const [w, h] of [
     [1440, 900],
@@ -209,12 +385,20 @@ test('independent entry watchdog reveals a fallback when the WebGL module never 
     const document = new EventTarget()
     document.documentElement = root
     const window = new EventTarget()
+    window.parent = window
     window.setTimeout = (callback, duration) => {
       timers.set(++id, { callback, duration })
       return id
     }
     const clearTimeout = (key) => timers.delete(key)
-    vm.runInNewContext(bootstrap, { window, document, clearTimeout, Event })
+    vm.runInNewContext(bootstrap, {
+      window,
+      document,
+      clearTimeout,
+      Event,
+      URLSearchParams,
+      location: { search: '' }
+    })
     return {
       root,
       document,
@@ -249,139 +433,6 @@ test('independent entry watchdog reveals a fallback when the WebGL module never 
   restored.persisted = true
   bfcache.window.dispatchEvent(restored)
   assert.equal(bfcache.timers.size, 2)
-})
-
-test('avatar entry preserves modified clicks, navigates once and resets on history restore', async () => {
-  const source = await Bun.file(
-    new URL('../src/components/nailong/transition.ts', import.meta.url)
-  ).text()
-  const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(
-    source.replace('export function', 'function')
-  )
-  const setup = (reduced = false) => {
-    const timers = new Map(),
-      animations = [],
-      navigations = []
-    let id = 0
-    const nodes = []
-    class Element extends EventTarget {
-      style = {}
-      appendChild() {}
-      target = ''
-      href = '/nailong'
-      hasAttribute() {
-        return false
-      }
-      querySelector() {
-        return null
-      }
-      getBoundingClientRect() {
-        return { x: 200, y: 100, width: 112, height: 112 }
-      }
-      setAttribute() {}
-      animate(frames, options) {
-        const animation = {
-          frames,
-          options,
-          cancelled: false,
-          cancel() {
-            this.cancelled = true
-          }
-        }
-        animations.push(animation)
-        return animation
-      }
-      remove() {
-        const index = nodes.indexOf(this)
-        if (index >= 0) nodes.splice(index, 1)
-      }
-    }
-    const link = new Element()
-    const window = new EventTarget()
-    window.matchMedia = () => ({ matches: reduced })
-    window.location = { assign: (href) => navigations.push(href) }
-    window.setTimeout = (callback, duration) => {
-      timers.set(++id, { callback, duration })
-      return id
-    }
-    const document = {
-      querySelector: () => link,
-      createElement: () => new Element(),
-      body: { appendChild: (el) => nodes.push(el) }
-    }
-    const storage = new Map()
-    vm.runInNewContext(code + '\nmountAvatarTransition()', {
-      document,
-      window,
-      sessionStorage: { setItem: (key, value) => storage.set(key, value) },
-      innerWidth: 1440,
-      innerHeight: 900,
-      clearTimeout: (key) => timers.delete(key)
-    })
-    return {
-      link,
-      window,
-      nodes,
-      timers,
-      animations,
-      navigations,
-      storage,
-      click(properties = {}) {
-        const event = new Event('click', { cancelable: true })
-        Object.assign(event, { button: 0, ...properties })
-        link.dispatchEvent(event)
-        return event
-      },
-      fire(duration) {
-        for (const [key, timer] of [...timers])
-          if (timer.duration === duration) {
-            timers.delete(key)
-            timer.callback()
-          }
-      }
-    }
-  }
-  for (const properties of [
-    { ctrlKey: true },
-    { metaKey: true },
-    { shiftKey: true },
-    { altKey: true },
-    { button: 1 }
-  ]) {
-    const entry = setup()
-    assert.equal(entry.click(properties).defaultPrevented, false)
-    assert.equal(entry.nodes.length, 0)
-  }
-  const blank = setup()
-  blank.link.target = '_blank'
-  assert.equal(blank.click().defaultPrevented, false)
-  const entry = setup()
-  assert.equal(entry.click().defaultPrevented, true)
-  entry.click()
-  assert.equal(entry.nodes.length, 2)
-  assert.equal(entry.animations[0].options.duration, 220)
-  assert.equal(entry.animations[1].frames[0].left, '256px')
-  assert.equal(entry.animations[1].frames[1].left, '720px')
-  entry.fire(220)
-  assert.equal(JSON.parse(entry.storage.get('nailong-entry-handoff')).width, 240)
-  assert.deepEqual(entry.navigations, ['/nailong'])
-  entry.window.dispatchEvent(new Event('pagehide'))
-  assert.equal(entry.nodes.length, 2)
-  assert.ok(entry.animations.every((animation) => !animation.cancelled))
-  entry.window.dispatchEvent(new Event('pageshow'))
-  assert.equal(entry.nodes.length, 0)
-  assert.equal(entry.timers.size, 0)
-  assert.ok(entry.animations.every((a) => a.cancelled))
-  entry.click()
-  assert.equal(entry.nodes.length, 2)
-  const reduced = setup(true)
-  reduced.click()
-  assert.equal(reduced.animations[0].options.duration, 120)
-  assert.equal(reduced.animations[0].frames[0].clipPath, undefined)
-  reduced.fire(120)
-  assert.deepEqual(reduced.navigations, ['/nailong'])
-  reduced.fire(10000)
-  assert.equal(reduced.nodes.length, 0)
 })
 
 test('reel captures the waiting lines current size and freezes their motion before revealing', () => {

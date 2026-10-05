@@ -141,6 +141,12 @@ export const prerender = true
       [data-ready] .gallery {
         display: none;
       }
+      :global(html[data-nailong-embedded][data-nailong-entry]) .entry {
+        display: none;
+      }
+      :global(html[data-nailong-embedded]) .back {
+        visibility: hidden;
+      }
       .entry {
         display: none;
         position: fixed;

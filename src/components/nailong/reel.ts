@@ -78,6 +78,7 @@ function seed(name: string) {
 }
 
 export function mountReel() {
+  if (new URLSearchParams(location.search).get('fallback') === '1') return
   const stage = document.querySelector<HTMLElement>('#nailong-stage')
   if (!stage) return
   if (document.documentElement.dataset.nailongEntry === 'fallback') return
@@ -95,6 +96,12 @@ export function mountReel() {
   themeButton.addEventListener('click', () => {
     const dark = !document.documentElement.classList.contains('dark')
     document.documentElement.classList.toggle('dark', dark)
+    if (document.documentElement.hasAttribute('data-nailong-embedded')) {
+      window.parent.postMessage(
+        { type: 'nailong:theme', theme: dark ? 'dark' : 'light' },
+        location.origin
+      )
+    }
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', dark ? '#0B0B10' : '#F7F5ED')
@@ -151,6 +158,29 @@ export function mountReel() {
     lastPosition = 0,
     lastTime = performance.now(),
     frame = 0
+  const embedded = document.documentElement.hasAttribute('data-nailong-embedded')
+  let prepared = false
+  let started = !embedded
+  window.addEventListener(
+    'message',
+    (event) => {
+      if (!embedded || event.origin !== location.origin || event.source !== window.parent) return
+      if (
+        event.data?.type !== 'nailong:start' ||
+        !Number.isFinite(event.data.width) ||
+        event.data.width <= 0
+      )
+        return
+      if (started) return
+      shared.uEntranceStartScale.value = THREE.MathUtils.clamp(
+        event.data.width / stage.clientWidth,
+        0.001,
+        1
+      )
+      started = true
+    },
+    options
+  )
   let ready = false
   let entranceStarted = 0
   let interactive = false
@@ -296,9 +326,17 @@ export function mountReel() {
         frame = requestAnimationFrame(animate)
         return
       }
+      if (!started) {
+        if (!prepared) {
+          prepared = true
+          window.parent.postMessage({ type: 'nailong:prepared' }, location.origin)
+        }
+        frame = requestAnimationFrame(animate)
+        return
+      }
       try {
         const weave = document.querySelector<HTMLElement>('.entry-weave')
-        if (weave) {
+        if (weave && !embedded) {
           const style = getComputedStyle(weave)
           const width = weave.getBoundingClientRect().width
           weave.style.setProperty('--weave-width', `${width}px`)
