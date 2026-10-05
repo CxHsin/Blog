@@ -21,37 +21,37 @@ comment: true
 
 ### 1.1 Muse
 
-用一句话来说：
+先谈谈 Meta 的 muse，用一句话来概括：
 
 > Muse = 大模型 + 一台属于你的云端电脑 + 持久记忆 + 外部服务连接器 + 权限与安全控制系统。
 
-出彩的地方就在于 Meta 为 Muse 准备的应用生态：WhatsApp、Instagram、Facebook、移动端等，以及未来会接入的 AI 眼镜。
+其本身没有出彩的，关键就在于 Meta 为 Muse 准备的应用生态：WhatsApp、Instagram、Facebook、移动端等，以及未来会接入的 AI 眼镜。
 
 Meta 在试图把“Agent”放进一个现成的消费互联网关系网里。
 
 ### 1.2 Cue
 
-用一句话来说：
+而 Cue 呢：
 
 > Cue = 大模型 + 一台专属云端电脑 + 一个拥有邮箱/电话/钱包的数字身份 + 持续任务与事件监控 + 对外沟通和交易能力 + 多 Agent 协作系统。
 
-Cue 出彩的地方就在于，他让 agent 逐渐作为行动主体，不再是作为“工具使用者”，或许，未来互联网上聊天的全是 bot 呢（bush）。
-
-[Manus 的官方发布说明](https://manus.im/zh-cn/blog/introducing-manus-2-0)也明确写道，Cue 中的 agent 可以使用自己的邮箱、电话号码、钱包和电脑，并在用户离线后继续工作。
+它出彩的地方就在于，为 agent 准备了自己的邮箱、电话号码、钱包和电脑，它让 agent 逐渐作为行动主体，不再只是作为“工具使用者”，或许，未来互联网上聊天的全是 bot 呢（bush）。
 
 ### 1.3 Dots
 
-用一句话来讲：
+接下来是 OpenAI 在 Devday 发布的 Dots：
 
 > Dots = 大模型负责判断 + 记忆维持连续性 + 云电脑提供执行环境 + 调度机制决定何时继续 + 子 Agent 分工 + 权限系统控制行动边界。
 
-这个没什么新东西，Dots 出彩的地方也在于生态，它作为 OpenAI 各种执行能力的个人协调层，可以以 Dots 为入口去使用 Codex、ChatGPT Work，以及各类应用 。
+这个没什么新东西，Dots 出彩的地方也在于生态，它作为 OpenAI 各种执行能力的个人协调层，可以以 Dots 为入口去调用 Codex、ChatGPT Work 以及各类应用。
 
 ## 2. personal agent 火爆的原因
 
+国外这波 personal agent 的火爆，我想有几点原因。
+
 ### 2.1 基础设施和执行能力的不断完善
 
-过去几年在 coding agent 等产品中不断成熟的 browser use、computer use、memory、cloud runtime 等能力，为 personal agent 提供了越来越完整的执行基础设施
+到现在，browser use、computer use、memory、cloud runtime 等能力成熟以及 LLM 的逐渐变强，为 personal agent 提供了越来越完整的执行基础设施。
 
 ### 2.2 新的流量入口
 
@@ -71,10 +71,8 @@ Cue 出彩的地方就在于，他让 agent 逐渐作为行动主体，不再是
 
 ## 3. 最后
 
-到现在为止，personal agent 的生态和能力已经不断完善（bushi），而在未来，差异或许将会逐渐体现在执行可靠性、长期任务管理、权限控制和生态连接上。
-
 如果未来用户不再直接操作软件，而是只向 Agent 提出意图，那么互联网的入口、软件的形态，以及用户与服务商之间的关系，会发生什么？
 
-在可以预见的未来里，用户将不再需要自己选择 app，只需要说明意图，agent 将成为新一代“意图入口”。
+用户将不再需要自己选择 app，只需要说明意图。
 
 那么在那个时候，手机是否还会是未来个人 Agent 的主要交互终端？
