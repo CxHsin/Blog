@@ -1,18 +1,19 @@
 ---
 import { Image } from 'astro:assets'
+import { openSourceProjects } from '@/data/projects'
 import { getSafeArchiveCollection, getSafeBlogCollection } from '@/lib/content-guards'
 import avatar from 'src/assets/avatar.jpg'
 
-import { PostPreview } from 'astro-pure/components/pages'
 import { Quote } from 'astro-pure/advanced'
+import { PostPreview } from 'astro-pure/components/pages'
 import { Button, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import ParticleWordmark from '@/components/home/ParticleWordmark.astro'
 import Section from '@/components/home/Section.astro'
 import SkillLayout from '@/components/home/SkillLayout.astro'
-import LoadingOverlay from '@/components/showcase/LoadingOverlay.astro'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
+import LoadingOverlay from '@/components/showcase/LoadingOverlay.astro'
 import Terminal from '@/components/terminal/Terminal.astro'
-import { openSourceProjects } from '@/data/projects'
 import config from '@/site-config'
 
 export const prerender = true
@@ -123,36 +124,49 @@ const latestPosts = (await getSafeBlogCollection())
         <Button title='See more' class='w-fit self-end text-sm' href='/about' style='ahead' />
       </Section>
 
-      {latestPosts.length > 0 && <Section title='Blog'>
-        {
-          <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
-            {latestPosts.map((post) => <PostPreview post={post} />)}
-          </ul>
-        }
-        <Button title='Open page' class='w-fit self-end text-sm' href='/blog' style='ahead' />
-      </Section>}
+      {
+        latestPosts.length > 0 && (
+          <Section title='Blog'>
+            {
+              <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
+                {latestPosts.map((post) => (
+                  <PostPreview post={post} />
+                ))}
+              </ul>
+            }
+            <Button title='Open page' class='w-fit self-end text-sm' href='/blog' style='ahead' />
+          </Section>
+        )
+      }
 
-      {latestNotes.length > 0 && <Section title='Notes'>
-        <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
-          {
-            latestNotes.map((note) => (
-              <li class='group/card relative flex flex-col rounded-2xl border bg-background px-5 py-2.5 transition-colors ease-in-out hover:bg-muted'>
-                <a
-                  class='group/link flex w-full flex-col transition-all hover:text-primary sm:flex-row'
-                  href={`/archive/${note.id}`}
-                  data-astro-prefetch
-                >
-                  <span class='min-w-[95px] py-1 text-xs text-muted-foreground'>
-                    {archiveTypeLabels[note.data.type] || note.data.type}
-                  </span>
-                  <div class='z-10 flex-grow py-1'>{note.data.title}</div>
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-        <Button title='Open page' class='w-fit self-end text-sm' href='/archive' style='ahead' />
-      </Section>}
+      {
+        latestNotes.length > 0 && (
+          <Section title='Notes'>
+            <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
+              {latestNotes.map((note) => (
+                <li class='group/card relative flex flex-col rounded-2xl border bg-background px-5 py-2.5 transition-colors ease-in-out hover:bg-muted'>
+                  <a
+                    class='group/link flex w-full flex-col transition-all hover:text-primary sm:flex-row'
+                    href={`/archive/${note.id}`}
+                    data-astro-prefetch
+                  >
+                    <span class='min-w-[95px] py-1 text-xs text-muted-foreground'>
+                      {archiveTypeLabels[note.data.type] || note.data.type}
+                    </span>
+                    <div class='z-10 flex-grow py-1'>{note.data.title}</div>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <Button
+              title='Open page'
+              class='w-fit self-end text-sm'
+              href='/archive'
+              style='ahead'
+            />
+          </Section>
+        )
+      }
 
       <Section title='Open Source'>
         <ProjectSection project={openSourceProjects} />
@@ -183,5 +197,6 @@ const latestPosts = (await getSafeBlogCollection())
     </div>
 
     <Quote class='mt-12' />
+    <ParticleWordmark />
   </main>
 </PageLayout>
