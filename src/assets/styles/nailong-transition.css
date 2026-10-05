@@ -1,0 +1,16 @@
+.nailong-departure {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: #f7f5ed;
+}
+.dark .nailong-departure {
+  background: #0b0b10;
+}
+.nailong-departure-avatar {
+  position: fixed;
+  z-index: 99999;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+}

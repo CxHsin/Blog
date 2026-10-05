@@ -80,6 +80,7 @@ function seed(name: string) {
 export function mountReel() {
   const stage = document.querySelector<HTMLElement>('#nailong-stage')
   if (!stage) return
+  if (document.documentElement.dataset.nailongEntry === 'fallback') return
   const images: ReelImage[] = JSON.parse(stage.dataset.images ?? '[]')
   const themeButton = document.querySelector<HTMLButtonElement>('#nailong-theme')!
   const current = document.querySelector<HTMLElement>('#nailong-current')!
@@ -105,12 +106,17 @@ export function mountReel() {
     syncButton()
   })
   syncButton()
-  if (!images.length) return
+  const fallback = () => document.dispatchEvent(new Event('nailong:fallback'))
+  if (!images.length) {
+    fallback()
+    return
+  }
 
   let renderer: THREE.WebGLRenderer
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   } catch {
+    fallback()
     return // Server-rendered gallery remains usable, including without JavaScript.
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
@@ -123,6 +129,7 @@ export function mountReel() {
   const loader = new THREE.TextureLoader()
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
   const shared = {
+    uEntrance: { value: 0 },
     uTime: { value: 0 },
     uWave: { value: 0 },
     uPitch: { value: 1 },
@@ -144,6 +151,8 @@ export function mountReel() {
     lastTime = performance.now(),
     frame = 0
   let ready = false
+  let entranceStarted = 0
+  let interactive = false
   const startupDeadline = performance.now() + 15000
   let disposed = false,
     dragging = false,
@@ -296,6 +305,8 @@ export function mountReel() {
         stage!.appendChild(renderer.domElement)
         stage!.dataset.ready = ''
         ready = true
+        entranceStarted = now
+        document.dispatchEvent(new Event('nailong:reveal'))
         lastTime = now
       } catch {
         dispose()
@@ -304,6 +315,11 @@ export function mountReel() {
     }
     const dt = Math.min((now - lastTime) / 1000, 0.05)
     lastTime = now
+    shared.uEntrance.value = Math.min((now - entranceStarted) / (reduced.matches ? 150 : 650), 1)
+    if (!interactive && shared.uEntrance.value === 1) {
+      interactive = true
+      stage!.dataset.interactive = ''
+    }
     position += (target - position) * (reduced.matches ? 1 : 1 - Math.exp(-5 * dt))
     const pixelsPerFrame =
       ((((position - lastPosition) * pitch) / worldWidth) * pixelWidth) / Math.max(dt * 60, 0.001)
@@ -332,7 +348,7 @@ export function mountReel() {
   stage.addEventListener(
     'wheel',
     (event) => {
-      if (!ready || event.ctrlKey) return
+      if (!interactive || event.ctrlKey) return
       event.preventDefault()
       const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX
       move(
@@ -348,7 +364,7 @@ export function mountReel() {
   stage.addEventListener(
     'pointerdown',
     (event) => {
-      if (!ready || event.button !== 0) return
+      if (!interactive || event.button !== 0) return
       dragging = true
       lastX = event.clientX
       lastY = event.clientY
@@ -379,7 +395,7 @@ export function mountReel() {
   window.addEventListener(
     'keydown',
     (event) => {
-      if (!ready) return
+      if (!interactive) return
       if (
         event.target instanceof HTMLElement &&
         (event.target.matches('button, a, input, textarea, select') ||
@@ -422,6 +438,8 @@ export function mountReel() {
     renderer.dispose()
     renderer.domElement.remove()
     delete stage!.dataset.ready
+    delete stage!.dataset.interactive
+    fallback()
   }
   renderer.domElement.addEventListener(
     'webglcontextlost',
@@ -431,6 +449,7 @@ export function mountReel() {
     },
     options
   )
+  document.addEventListener('nailong:timeout', dispose, { ...options, once: true })
   document.addEventListener('astro:before-swap', dispose, { ...options, once: true })
   // Keep GPU resources alive when entering the back/forward cache; resume once restored.
   window.addEventListener(
