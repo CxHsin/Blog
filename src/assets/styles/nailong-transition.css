@@ -1,0 +1,111 @@
+.nailong-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  color: #18181b;
+  background: #f7f5ed;
+}
+.nailong-shell[data-theme='dark'] {
+  color: #fafafa;
+  background: #0b0b10;
+}
+.nailong-shell iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.nailong-cover {
+  position: absolute;
+  inset: 0;
+  background: #f7f5ed;
+  pointer-events: none;
+}
+.nailong-shell[data-theme='dark'] .nailong-cover {
+  background: #0b0b10;
+}
+.nailong-cover[hidden] {
+  display: none;
+}
+.nailong-weave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(32vw, 240px);
+  gap: 10px;
+  opacity: 0.3;
+  animation: nailong-grow 650ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.nailong-weave span {
+  height: 1px;
+  background: currentColor;
+  animation: nailong-flow 1100ms ease-in-out infinite alternate;
+}
+.nailong-weave span:nth-child(2n) {
+  animation-delay: -550ms;
+}
+.nailong-status {
+  position: absolute;
+  top: calc(50% + 60px);
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.5;
+}
+.nailong-status a {
+  margin-left: 12px;
+  pointer-events: auto;
+  text-decoration: underline;
+}
+.nailong-shell-back {
+  position: absolute;
+  top: 44px;
+  left: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.nailong-shell-back:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
+}
+@keyframes nailong-grow {
+  from {
+    width: 12px;
+    gap: 2px;
+    opacity: 0;
+  }
+  to {
+    width: min(32vw, 240px);
+    gap: 10px;
+    opacity: 0.3;
+  }
+}
+@keyframes nailong-flow {
+  from {
+    transform: scaleX(0.88);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+@media (max-width: 600px) {
+  .nailong-shell-back {
+    left: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nailong-weave,
+  .nailong-weave span {
+    animation: none;
+  }
+}

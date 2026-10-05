@@ -1,10 +1,15 @@
 ---
 import { images } from './images'
+
+import '@/assets/styles/nailong-transition.css'
 ---
 
 <span hidden data-nailong-preload={JSON.stringify(images.map(({ src }) => src))}></span>
 <script>
+  import { mountAvatarTransition } from './transition'
   import { initialImageIndices } from './viewport'
+
+  mountAvatarTransition()
 
   const element = document.querySelector<HTMLElement>('[data-nailong-preload]')
   const sources: string[] = JSON.parse(element?.dataset.nailongPreload ?? '[]')

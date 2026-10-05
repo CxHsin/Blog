@@ -12,6 +12,7 @@ export const prerender = true
   <head>
     <BaseHead title='奶龙彩蛋' description='滚动，看看奶龙如何散开，又重新织合。' />
     <ThemeProvider />
+    <script is:inline src='/scripts/nailong-entry.js'></script>
     <meta name='robots' content='noindex' />
     <style>
       :global(html) {
@@ -36,6 +37,9 @@ export const prerender = true
         overflow: hidden;
         touch-action: none;
         cursor: grab;
+      }
+      main[data-ready]:not([data-interactive]) {
+        cursor: default;
       }
       main[data-dragging] {
         cursor: grabbing;
@@ -137,6 +141,151 @@ export const prerender = true
       [data-ready] .gallery {
         display: none;
       }
+      :global(html[data-nailong-embedded][data-nailong-entry]) .entry {
+        display: none;
+      }
+      :global(html[data-nailong-embedded]) .back {
+        visibility: hidden;
+      }
+      .entry {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 22px;
+        background: #f7f5ed;
+        pointer-events: none;
+      }
+      :global(html.dark) .entry {
+        background: #0b0b10;
+      }
+      :global(html[data-nailong-entry]) .entry {
+        display: flex;
+      }
+      :global(html[data-nailong-entry='loading']) .gallery {
+        visibility: hidden;
+      }
+      :global(html[data-nailong-entry='ready']) .entry,
+      :global(html[data-nailong-entry='fallback']) .entry {
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 150ms ease,
+          visibility 150ms;
+      }
+      :global(html[data-nailong-entry='fallback']) .gallery {
+        animation: gallery-reveal 150ms ease;
+      }
+      :global(html[data-nailong-entry='ready']) .entry {
+        background: transparent;
+        transition:
+          opacity 650ms ease,
+          visibility 650ms;
+      }
+      .entry-weave {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(32vw, 240px);
+        opacity: 0.3;
+        animation: weave-grow 650ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        transition:
+          width 650ms cubic-bezier(0.22, 0.61, 0.36, 1),
+          gap 650ms cubic-bezier(0.22, 0.61, 0.36, 1);
+      }
+      :global(html[data-nailong-entry='ready']) .entry-weave {
+        animation: weave-handoff 650ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+      }
+      .entry-weave span {
+        height: 1px;
+        background: currentColor;
+        animation: weave-breathe 1100ms ease-in-out infinite alternate;
+      }
+      .entry-weave span:nth-child(2n) {
+        animation-delay: -550ms;
+      }
+      .entry-label {
+        position: absolute;
+        top: calc(50% + 46px);
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 150ms;
+      }
+      :global(html[data-nailong-waiting]) .entry-label {
+        visibility: visible;
+        opacity: 0.5;
+      }
+      @keyframes weave-grow {
+        from {
+          width: var(--weave-start-width, 12px);
+          gap: var(--weave-start-gap, 2px);
+          opacity: var(--weave-start-opacity, 0);
+        }
+        to {
+          width: min(32vw, 240px);
+          gap: 10px;
+          opacity: 0.3;
+        }
+      }
+      @keyframes weave-handoff {
+        from {
+          width: var(--weave-width);
+          gap: var(--weave-gap);
+          opacity: var(--weave-opacity);
+        }
+        to {
+          width: min(70vw, 760px);
+          gap: 20px;
+          opacity: 0;
+        }
+      }
+      @keyframes weave-breathe {
+        from {
+          transform: scaleX(0.88);
+          opacity: 0.35;
+        }
+        to {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      @keyframes gallery-reveal {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        :global(html[data-nailong-entry='ready']) .entry {
+          transition:
+            opacity 150ms ease,
+            visibility 150ms;
+        }
+        .entry-weave {
+          transition: none;
+          animation: none;
+        }
+        :global(html[data-nailong-entry='ready']) .entry-weave {
+          width: 48px;
+          gap: 5px;
+          animation: none;
+        }
+        .entry-weave span {
+          animation: none;
+        }
+      }
       @media (max-width: 600px) {
         header,
         footer {
@@ -177,6 +326,10 @@ export const prerender = true
         {images.length === 0 && <p>奶龙还没到场，稍后再来看看。</p>}
       </div>
     </main>
+    <div class='entry' aria-live='polite' role='status'>
+      <div class='entry-weave' aria-hidden='true'>{Array.from({ length: 6 }, () => <span />)}</div>
+      <p class='entry-label'>正在展开卷轴</p>
+    </div>
     <header>
       <a href='/' class='back' aria-label='返回首页'><span aria-hidden='true'>↖</span> 返回首页</a>
       <span class='brand'>NAILONG<span class='edition'> / SECRET REEL</span></span>

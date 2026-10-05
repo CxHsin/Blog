@@ -10,10 +10,13 @@ uniform float uPitch;
 uniform float uHeight;
 uniform vec2 uViewport;
 uniform float uMotion;
+uniform float uEntrance;
+uniform float uEntranceStartScale;
 varying vec2 vUv;
 varying float vTear;
 varying float vRim;
 varying float vRandom;
+varying float vEntrance;
 float hash(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
 void main() {
   vUv = uv;
@@ -33,6 +36,12 @@ void main() {
   float randomA = hash(aThread + uSeed * 57.0);
   float randomB = hash(aThread * 3.7 + uSeed * 91.0);
   vRandom = randomA;
+  float delay = min(abs(modelMatrix[3].x) / uPitch * 0.075, 0.2) + randomA * 0.12;
+  float enter = smoothstep(delay, delay + 0.68, uEntrance);
+  vEntrance = mix(smoothstep(0.0, 1.0, uEntrance), enter, uMotion);
+  float unfurl = (1.0 - enter) * uMotion;
+  projected.x += (randomA - 0.5) * 280.0 * unfurl * 2.0 / uViewport.x * projected.w;
+  projected.y += (randomB - 0.5) * 45.0 * unfurl * 2.0 / uViewport.y * projected.w;
   float t = pow(tear, 1.4);
   float run = t * (60.0 + randomA * 420.0);
   run *= 0.85 + 0.15 * sin(uTime * (1.0 + randomB * 2.0) + randomA * 6.2831);
@@ -41,6 +50,9 @@ void main() {
   float drift = (randomA - 0.5) * 170.0 * t * t;
   drift += sin(screenX * uViewport.x * 0.01 + uTime * (1.6 + randomA * 2.2) + randomA * 6.2831) * (5.0 + 13.0 * randomA) * t;
   projected.y += drift * 2.0 / uViewport.y * projected.w;
+  // Continue growing from the waiting lines' current width, around screen center.
+  float entranceScale = mix(uEntranceStartScale, 1.0, smoothstep(0.0, 1.0, uEntrance));
+  projected.xy *= mix(1.0, entranceScale, uMotion);
   vTear = tear;
   gl_Position = projected;
 }
@@ -54,6 +66,7 @@ varying vec2 vUv;
 varying float vTear;
 varying float vRim;
 varying float vRandom;
+varying float vEntrance;
 float sdRoundBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
@@ -66,6 +79,7 @@ void main() {
   float cardAlpha = 1.0 - smoothstep(-1.5, 0.5, sdRoundBox((vUv - 0.5) * uCardSize, uCardSize * 0.5, 12.0));
   vec4 sampleColor = texture2D(uMap, (vUv - 0.5) * uCrop + 0.5);
   float alpha = sampleColor.a * cardAlpha * threadAlpha * (1.0 - smoothstep(0.75, 1.0, tear) * 0.65);
+  alpha *= vEntrance;
   if (alpha < 0.003) discard;
   vec3 color = sampleColor.rgb;
   color *= 1.0 - tear * 0.4 * rim * rim;
