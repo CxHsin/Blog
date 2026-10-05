@@ -49,6 +49,9 @@ void main() {
   float drift = (randomA - 0.5) * 170.0 * t * t;
   drift += sin(screenX * uViewport.x * 0.01 + uTime * (1.6 + randomA * 2.2) + randomA * 6.2831) * (5.0 + 13.0 * randomA) * t;
   projected.y += drift * 2.0 / uViewport.y * projected.w;
+  // Grow the entire ribbon from the waiting motif's 48px width, around screen center.
+  float entranceScale = mix(min(0.12, 48.0 / uViewport.x), 1.0, smoothstep(0.0, 1.0, uEntrance));
+  projected.xy *= mix(1.0, entranceScale, uMotion);
   vTear = tear;
   gl_Position = projected;
 }
