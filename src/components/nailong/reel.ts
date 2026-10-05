@@ -130,6 +130,7 @@ export function mountReel() {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
   const shared = {
     uEntrance: { value: 0 },
+    uEntranceStartScale: { value: 0.02 },
     uTime: { value: 0 },
     uWave: { value: 0 },
     uPitch: { value: 1 },
@@ -296,6 +297,21 @@ export function mountReel() {
         return
       }
       try {
+        const weave = document.querySelector<HTMLElement>('.entry-weave')
+        if (weave) {
+          const style = getComputedStyle(weave)
+          const width = weave.getBoundingClientRect().width
+          weave.style.setProperty('--weave-width', `${width}px`)
+          weave.style.setProperty('--weave-gap', style.gap)
+          weave.style.setProperty('--weave-opacity', style.opacity)
+          for (const line of weave.querySelectorAll<HTMLElement>('span')) {
+            const lineStyle = getComputedStyle(line)
+            line.style.transform = lineStyle.transform
+            line.style.opacity = lineStyle.opacity
+            line.style.animation = 'none'
+          }
+          shared.uEntranceStartScale.value = THREE.MathUtils.clamp(width / pixelWidth, 0.001, 1)
+        }
         updateSlots()
         renderer.render(scene, camera)
         if (shaderFailed) {

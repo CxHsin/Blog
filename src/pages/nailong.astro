@@ -182,24 +182,24 @@ export const prerender = true
       .entry-weave {
         display: flex;
         flex-direction: column;
-        gap: 5px;
-        width: 48px;
+        gap: 10px;
+        width: min(32vw, 240px);
         opacity: 0.3;
+        animation: weave-grow 650ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
         transition:
           width 650ms cubic-bezier(0.22, 0.61, 0.36, 1),
           gap 650ms cubic-bezier(0.22, 0.61, 0.36, 1);
       }
       :global(html[data-nailong-entry='ready']) .entry-weave {
-        width: min(70vw, 760px);
-        gap: 20px;
+        animation: weave-handoff 650ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
       }
       .entry-weave span {
         height: 1px;
         background: currentColor;
-        animation: weave-breathe 1800ms ease-in-out infinite alternate;
+        animation: weave-breathe 1100ms ease-in-out infinite alternate;
       }
       .entry-weave span:nth-child(2n) {
-        animation-delay: -900ms;
+        animation-delay: -550ms;
       }
       .entry-label {
         position: absolute;
@@ -215,9 +215,33 @@ export const prerender = true
         visibility: visible;
         opacity: 0.5;
       }
+      @keyframes weave-grow {
+        from {
+          width: 12px;
+          gap: 2px;
+          opacity: 0;
+        }
+        to {
+          width: min(32vw, 240px);
+          gap: 10px;
+          opacity: 0.3;
+        }
+      }
+      @keyframes weave-handoff {
+        from {
+          width: var(--weave-width);
+          gap: var(--weave-gap);
+          opacity: var(--weave-opacity);
+        }
+        to {
+          width: min(70vw, 760px);
+          gap: 20px;
+          opacity: 0;
+        }
+      }
       @keyframes weave-breathe {
         from {
-          transform: scaleX(0.6);
+          transform: scaleX(0.88);
           opacity: 0.35;
         }
         to {
@@ -241,10 +265,12 @@ export const prerender = true
         }
         .entry-weave {
           transition: none;
+          animation: none;
         }
         :global(html[data-nailong-entry='ready']) .entry-weave {
           width: 48px;
           gap: 5px;
+          animation: none;
         }
         .entry-weave span {
           animation: none;

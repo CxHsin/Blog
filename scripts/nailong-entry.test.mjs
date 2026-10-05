@@ -9,7 +9,7 @@ const source = await Bun.file(new URL('../src/components/nailong/reel.ts', impor
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(
   source.replace(/^import .*\n/gm, '').replace('export function mountReel', 'function mountReel')
 )
-function harness(width = 1440, height = 900) {
+function harness(width = 1440, height = 900, weaveWidth) {
   let now = 0,
     next = 0,
     renders = 0,
@@ -46,6 +46,16 @@ function harness(width = 1440, height = 900) {
     ['#nailong-current', new Element()],
     ['#nailong-caption', new Element()]
   ])
+  const properties = new Map()
+  const line = { style: {}, computed: { transform: 'matrix(0.94, 0, 0, 1, 0, 0)', opacity: '0.7' } }
+  if (weaveWidth !== undefined)
+    nodes.set('.entry-weave', {
+      style: { setProperty: (key, value) => properties.set(key, value) },
+      computed: { gap: '6px', opacity: '0.2' },
+      getBoundingClientRect: () => ({ width: weaveWidth }),
+      querySelectorAll: () => [line]
+    })
+  let startScale
   const document = new EventTarget()
   document.querySelector = (k) => nodes.get(k)
   document.hidden = false
@@ -73,6 +83,7 @@ function harness(width = 1440, height = 900) {
         scene.children.every((m) => m.material.uniforms.uMap.value.image?.loaded),
         'rendered unloaded texture'
       )
+      startScale = scene.children[0].material.uniforms.uEntranceStartScale.value
       renders++
     }
     dispose() {
@@ -86,6 +97,7 @@ function harness(width = 1440, height = 900) {
   }
   const context = vm.createContext({
     Event,
+    getComputedStyle: (element) => element.computed,
     THREE: { ...ActualThree, WebGLRenderer: Renderer, TextureLoader: Loader },
     reelLayout,
     vertexShader: '',
@@ -109,6 +121,11 @@ function harness(width = 1440, height = 900) {
   vm.runInContext(code + '\nmountReel()', context)
   return {
     stage,
+    properties,
+    line,
+    get startScale() {
+      return startScale
+    },
     window,
     document,
     loads,
@@ -356,4 +373,19 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
   assert.deepEqual(reduced.navigations, ['/nailong'])
   reduced.fire(10000)
   assert.equal(reduced.nodes.length, 0)
+})
+
+test('reel captures the waiting lines current size and freezes their motion before revealing', () => {
+  for (const width of [12, 80, 240]) {
+    const entry = harness(1440, 900, width)
+    entry.complete()
+    entry.tick()
+    assert.equal(entry.properties.get('--weave-width'), `${width}px`)
+    assert.equal(entry.properties.get('--weave-gap'), '6px')
+    assert.equal(entry.properties.get('--weave-opacity'), '0.2')
+    assert.equal(entry.line.style.animation, 'none')
+    assert.equal(entry.line.style.transform, entry.line.computed.transform)
+    assert.equal(entry.startScale, width / 1440)
+    assert.equal(entry.stage.dataset.ready, '')
+  }
 })
