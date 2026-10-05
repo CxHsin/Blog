@@ -89,8 +89,9 @@ structure for trivial commits.
 
 ## Pull Requests
 
-Commit changes directly to `main` for this blog repository. Use a different
-branch only when the user explicitly asks for one.
+Develop and commit changes on `development` for this blog repository. After
+verification, merge `development` into `main` to publish the completed changes.
+Use a different development branch only when the user explicitly asks for one.
 
 Do not use AI agent names as branch-name prefixes, such as `codex/`,
 `claude/`, or `gemini/`. When a prefix is useful, use one that describes the
