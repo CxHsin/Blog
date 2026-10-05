@@ -17,7 +17,11 @@ export function mountAvatarTransition() {
     weave?.remove()
     leaving = false
   }
-  window.addEventListener('pagehide', reset)
+  window.addEventListener('pagehide', () => {
+    // Keep the final departure frame intact until the next document replaces it.
+    clearTimeout(navigation)
+    clearTimeout(recovery)
+  })
   window.addEventListener('pageshow', reset)
   link.addEventListener('click', (event) => {
     if (

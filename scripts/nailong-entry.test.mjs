@@ -366,6 +366,8 @@ test('avatar entry preserves modified clicks, navigates once and resets on histo
   assert.equal(JSON.parse(entry.storage.get('nailong-entry-handoff')).width, 240)
   assert.deepEqual(entry.navigations, ['/nailong'])
   entry.window.dispatchEvent(new Event('pagehide'))
+  assert.equal(entry.nodes.length, 2)
+  assert.ok(entry.animations.every((animation) => !animation.cancelled))
   entry.window.dispatchEvent(new Event('pageshow'))
   assert.equal(entry.nodes.length, 0)
   assert.equal(entry.timers.size, 0)
