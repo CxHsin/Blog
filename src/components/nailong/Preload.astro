@@ -1,0 +1,48 @@
+---
+import { images } from './images'
+---
+
+<span hidden data-nailong-preload={JSON.stringify(images.map(({ src }) => src))}></span>
+<script>
+  import { initialImageIndices } from './viewport'
+
+  const element = document.querySelector<HTMLElement>('[data-nailong-preload]')
+  const sources: string[] = JSON.parse(element?.dataset.nailongPreload ?? '[]')
+  let stopped = false
+  window.addEventListener(
+    'pagehide',
+    () => {
+      stopped = true
+    },
+    { once: true }
+  )
+  const preload = async () => {
+    const queue = initialImageIndices(sources.length, window.innerWidth, window.innerHeight)
+    // Match TextureLoader's CORS mode so the next document can reuse its HTTP cache.
+    const worker = async () => {
+      while (!stopped && queue.length) {
+        const index = queue.shift()!
+        await new Promise<void>((resolve) => {
+          const image = new Image()
+          image.crossOrigin = 'anonymous'
+          image.fetchPriority = 'low'
+          image.onload = image.onerror = () => resolve()
+          image.src = sources[index]
+        })
+      }
+    }
+    await Promise.all([worker(), worker()])
+  }
+  const schedule = () => {
+    if ('requestIdleCallback' in window)
+      window.requestIdleCallback(() => {
+        void preload()
+      })
+    else
+      setTimeout(() => {
+        void preload()
+      }, 500)
+  }
+  if (document.readyState === 'complete') schedule()
+  else window.addEventListener('load', schedule, { once: true })
+</script>

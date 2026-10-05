@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
 import { fragmentShader, vertexShader } from './shaders'
+import { reelLayout } from './viewport'
 
 interface ReelImage {
   src: string
@@ -90,23 +91,19 @@ export function mountReel() {
     themeButton.setAttribute('aria-label', dark ? '切换为浅色主题' : '切换为深色主题')
     themeButton.setAttribute('aria-pressed', String(dark))
   }
-  themeButton.addEventListener(
-    'click',
-    () => {
-      const dark = !document.documentElement.classList.contains('dark')
-      document.documentElement.classList.toggle('dark', dark)
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', dark ? '#0B0B10' : '#F7F5ED')
-      try {
-        localStorage.setItem('theme', dark ? 'dark' : 'light')
-      } catch {
-        /* Theme still works without storage. */
-      }
-      syncButton()
-    },
-    options
-  )
+  themeButton.addEventListener('click', () => {
+    const dark = !document.documentElement.classList.contains('dark')
+    document.documentElement.classList.toggle('dark', dark)
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', dark ? '#0B0B10' : '#F7F5ED')
+    try {
+      localStorage.setItem('theme', dark ? 'dark' : 'light')
+    } catch {
+      /* Theme still works without storage. */
+    }
+    syncButton()
+  })
   syncButton()
   if (!images.length) return
 
@@ -146,6 +143,8 @@ export function mountReel() {
     lastPosition = 0,
     lastTime = performance.now(),
     frame = 0
+  let ready = false
+  const startupDeadline = performance.now() + 15000
   let disposed = false,
     dragging = false,
     lastX = 0,
@@ -210,7 +209,7 @@ export function mountReel() {
     }
     // One extra image on each side is prefetched. Cache size tracks viewport, not collection size.
     needed.add(mod(anchor - half - 1, images.length))
-    needed.add(mod(anchor + half + 1, images.length))
+    needed.add(mod(anchor + slots.length - half, images.length))
     for (const index of needed) requestTexture(index)
     for (const [index, entry] of cache) {
       if (!needed.has(index)) {
@@ -233,21 +232,17 @@ export function mountReel() {
     renderer.setSize(pixelWidth, height)
     camera.aspect = pixelWidth / height
     camera.updateProjectionMatrix()
-    const worldHeight = 2 * Math.tan(THREE.MathUtils.degToRad(24)) * camera.position.z
-    worldWidth = worldHeight * camera.aspect
-    const narrow = camera.aspect < 1.1
-    const cardWidth = Math.min(
-      worldWidth * (narrow ? 0.7 : 0.42),
-      (worldHeight * (narrow ? 0.35 : 0.4) * 5) / 3
-    )
+    const layout = reelLayout(pixelWidth, height)
+    worldWidth = layout.worldWidth
+    const cardWidth = layout.cardWidth
     const cardHeight = (cardWidth * 3) / 5
-    pitch = cardWidth * 1.015
+    pitch = layout.pitch
     shared.uPitch.value = pitch
     shared.uHeight.value = cardHeight
     shared.uViewport.value.set(pixelWidth, height)
     shared.uCardSize.value.set(
       (cardWidth / worldWidth) * pixelWidth,
-      (cardHeight / worldHeight) * height
+      (cardHeight / layout.worldHeight) * height
     )
     for (const mesh of slots) {
       scene.remove(mesh)
@@ -255,7 +250,7 @@ export function mountReel() {
     }
     geometry.dispose()
     geometry = ribbonGeometry(cardWidth, cardHeight)
-    const count = Math.ceil(worldWidth / pitch) + 6
+    const count = layout.count
     slots = Array.from({ length: count }, () => {
       const material = new THREE.ShaderMaterial({
         vertexShader,
@@ -281,6 +276,32 @@ export function mountReel() {
 
   function animate(now: number) {
     if (disposed) return
+    if (!ready) {
+      const entries = [...cache.values()]
+      if (entries.some((entry) => !entry.loading && !entry.texture) || now > startupDeadline) {
+        dispose()
+        return
+      }
+      if (entries.some((entry) => entry.loading)) {
+        frame = requestAnimationFrame(animate)
+        return
+      }
+      try {
+        updateSlots()
+        renderer.render(scene, camera)
+        if (shaderFailed) {
+          dispose()
+          return
+        }
+        stage!.appendChild(renderer.domElement)
+        stage!.dataset.ready = ''
+        ready = true
+        lastTime = now
+      } catch {
+        dispose()
+        return
+      }
+    }
     const dt = Math.min((now - lastTime) / 1000, 0.05)
     lastTime = now
     position += (target - position) * (reduced.matches ? 1 : 1 - Math.exp(-5 * dt))
@@ -311,7 +332,7 @@ export function mountReel() {
   stage.addEventListener(
     'wheel',
     (event) => {
-      if (event.ctrlKey) return
+      if (!ready || event.ctrlKey) return
       event.preventDefault()
       const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX
       move(
@@ -327,7 +348,7 @@ export function mountReel() {
   stage.addEventListener(
     'pointerdown',
     (event) => {
-      if (event.button !== 0) return
+      if (!ready || event.button !== 0) return
       dragging = true
       lastX = event.clientX
       lastY = event.clientY
@@ -358,6 +379,7 @@ export function mountReel() {
   window.addEventListener(
     'keydown',
     (event) => {
+      if (!ready) return
       if (
         event.target instanceof HTMLElement &&
         (event.target.matches('button, a, input, textarea, select') ||
@@ -430,9 +452,9 @@ export function mountReel() {
     },
     options
   )
+  let shaderFailed = false
   try {
     resize()
-    let shaderFailed = false
     renderer.debug.onShaderError = () => {
       shaderFailed = true
     }
@@ -441,8 +463,6 @@ export function mountReel() {
       dispose()
       return
     }
-    stage.appendChild(renderer.domElement)
-    stage.dataset.ready = ''
     frame = requestAnimationFrame(animate)
   } catch {
     dispose()

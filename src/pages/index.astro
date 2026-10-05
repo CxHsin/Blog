@@ -11,6 +11,7 @@ import PageLayout from '@/layouts/BaseLayout.astro'
 import ParticleWordmark from '@/components/home/ParticleWordmark.astro'
 import Section from '@/components/home/Section.astro'
 import SkillLayout from '@/components/home/SkillLayout.astro'
+import NailongPreload from '@/components/nailong/Preload.astro'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
 import LoadingOverlay from '@/components/showcase/LoadingOverlay.astro'
 import Terminal from '@/components/terminal/Terminal.astro'
@@ -54,6 +55,7 @@ const latestPosts = (await getSafeBlogCollection())
 ---
 
 <PageLayout meta={{ title: 'Home' }} highlightColor='#659EB9'>
+  <NailongPreload />
   <LoadingOverlay
     brand='CXIN'
     subtitle='Connecting Scroll Effects'

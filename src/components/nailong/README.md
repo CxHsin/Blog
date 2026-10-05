@@ -7,3 +7,5 @@
 横带几何及解织 shader 改编自 [Clément Grellier 的 Unwoven](https://github.com/clementgrellier/unwoven)，许可见同目录 `UNWOVEN-LICENSE.md`。空间波浪参考 [Saurow Reel Flux](https://saurow-reel.vercel.app/) 的速度驱动正弦形变，使用独立的 WebGL 实现。
 
 验证命令：`bun run check`、`bun run build`，以及针对改动文件的 ESLint / Prettier 检查。
+
+首页主要资源加载完成后，在空闲时间以两个并发请求预加载卷轴初始槽位和两侧相邻图片（包括循环末尾），与彩蛋页共享优化后的 WebP URL，通过浏览器 HTTP 缓存复用。首页不加载 Three.js。彩蛋页在首屏纹理就绪并完成首次渲染后才替换静态图库；加载失败或超过 15 秒则保留静态图库。等待期间原生滚动正常工作。
